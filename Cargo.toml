@@ -1,0 +1,16 @@
+[package]
+name = "unbounded-gpsd"
+description = "A basic library to access gpsd that uses no C bindings."
+documentation = "http://docs.rs/unbounded-gpsd"
+repository = "https://github.com/eeeeeta/unbounded-gpsd"
+readme = "README.md"
+license = "CC0-1.0"
+version = "0.1.0"
+authors = ["eeeeeta <eeeeeta@users.noreply.github.com>"]
+
+[dependencies]
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+chrono = { version = "0.3", features = ["serde"] }
+error-chain = "0.10"
