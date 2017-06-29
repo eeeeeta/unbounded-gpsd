@@ -8,16 +8,15 @@ fn serde_false() -> bool { false }
 #[serde(untagged, deny_unknown_fields)]
 /// A time-position-velocity (TPV) report.
 ///
-/// The API here splits the TPV object into three variants:
-/// - `FixWithCourse`, for GPS fixes with course, speed and climb data
-/// - `FixBasic`, for GPS fixes
-/// - `Basic`, for when no GPS fix has been obtained.
+/// The API here splits the TPV object that GPSD sends into various variants, in
+/// a bid to classify common responses so that you don't have to do this
+/// yourself. See the variant documentation for details.
 ///
 /// Basically, the aim here is to reduce the amount of Option unwrapping
 /// you have to do, as gpsd specifies that all these fields are optional.
 ///
-/// Documentation is not given for variants other than `FixWithCourse` for brevity;
-/// the field documentation is exactly the same across variants.
+/// The field documentation is exactly the same across variants; it may be omitted
+/// for brevity.
 ///
 /// # Error estimates
 ///
@@ -25,7 +24,77 @@ fn serde_false() -> bool { false }
 /// their respective fields: for example, `alt_err` is the altitude error, given
 /// in meters. All errors are delivered with 95% confidence.
 pub enum TpvResponse {
-    FixWithCourse {
+    /// 3D GPS fix, with track, speed and climb data.
+    Fix3D {
+        /// Name of originating device.
+        device: Option<String>,
+        /// Timestamp.
+        time: DateTime<FixedOffset>,
+        /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
+        mode: u8,
+        /// Estimated timestamp error (seconds, 95% confidence).
+        #[serde(rename = "ept")]
+        time_err: f64,
+        /// Latitude in degrees: +/- signifies North/South. Present when mode is 2 or 3.
+        lat: f64,
+        #[serde(rename = "epy")]
+        lat_err: Option<f64>,
+        /// Longitude in degrees: +/- signifies East/West. Present when mode is 2 or 3.
+        lon: f64,
+        #[serde(rename = "epx")]
+        lon_err: Option<f64>,
+        /// Altitude in meters. Present if mode is 3.
+        alt: f64,
+        #[serde(rename = "epv")]
+        alt_err: Option<f64>,
+        /// Course over ground, degrees from true north.
+        track: f64,
+        #[serde(rename = "epd")]
+        track_err: Option<f64>,
+        /// Speed over ground, meters per second.
+        speed: f64,
+        #[serde(rename = "eps")]
+        speed_err: Option<f64>,
+        /// Climb (positive) or sink (negative) rate, meters per second.
+        climb: f64,
+        #[serde(rename = "epc")]
+        climb_err: Option<f64>
+    },
+    /// 2D GPS fix, with track and speed data.
+    Fix2D {
+        /// Name of originating device.
+        device: Option<String>,
+        /// Timestamp.
+        time: DateTime<FixedOffset>,
+        /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
+        mode: u8,
+        /// Estimated timestamp error (seconds, 95% confidence).
+        #[serde(rename = "ept")]
+        time_err: f64,
+        /// Latitude in degrees: +/- signifies North/South. Present when mode is 2 or 3.
+        lat: f64,
+        #[serde(rename = "epy")]
+        lat_err: Option<f64>,
+        /// Longitude in degrees: +/- signifies East/West. Present when mode is 2 or 3.
+        lon: f64,
+        #[serde(rename = "epx")]
+        lon_err: Option<f64>,
+        /// Course over ground, degrees from true north.
+        track: f64,
+        #[serde(rename = "epd")]
+        track_err: Option<f64>,
+        /// Speed over ground, meters per second.
+        speed: f64,
+        #[serde(rename = "eps")]
+        speed_err: Option<f64>,
+    },
+    /// Fix with lat/lon, and an unknown smattering of fields.
+    /// You'll get this variant if a fix is obtained (lat/lon available), but GPSD
+    /// otherwise sent data that doesn't exactly fit into any of the categories above.
+    ///
+    /// If you are getting this variant, we'd greatly appreciate it if you filed an issue,
+    /// so we can see what sort of strange data your GPSD is sending!
+    LatLonOnly {
         /// Name of originating device.
         device: Option<String>,
         /// Timestamp.
@@ -48,44 +117,42 @@ pub enum TpvResponse {
         #[serde(rename = "epv")]
         alt_err: Option<f64>,
         /// Course over ground, degrees from true north.
-        track: f64,
-        #[serde(rename = "epd")]
-        track_err: Option<f64>,
-        /// Speed over ground, meters per second.
-        speed: f64,
-        #[serde(rename = "eps")]
-        speed_err: Option<f64>,
-        /// Climb (positive) or sink (negative) rate, meters per second.
-        climb: f64,
-        #[serde(rename = "epc")]
-        climb_err: Option<f64>
-    },
-    FixBasic {
-        device: Option<String>,
-        time: DateTime<FixedOffset>,
-        mode: u8,
-        #[serde(rename = "ept")]
-        time_err: f64,
-        lat: f64,
-        #[serde(rename = "epy")]
-        lat_err: Option<f64>,
-        lon: f64,
-        #[serde(rename = "epx")]
-        lon_err: Option<f64>,
-        alt: Option<f64>,
-        #[serde(rename = "epv")]
-        alt_err: Option<f64>,
         track: Option<f64>,
         #[serde(rename = "epd")]
         track_err: Option<f64>,
+        /// Speed over ground, meters per second.
         speed: Option<f64>,
         #[serde(rename = "eps")]
         speed_err: Option<f64>,
+        /// Climb (positive) or sink (negative) rate, meters per second.
         climb: Option<f64>,
         #[serde(rename = "epc")]
         climb_err: Option<f64>,
     },
-    Basic {
+    /// No fix.
+    NoFix {
+        /// Name of originating device.
+        device: Option<String>,
+        /// Timestamp.
+        time: DateTime<FixedOffset>,
+        /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
+        mode: u8
+    },
+    /// Possibly no useful data whatsoever.
+    Nothing {
+        /// Name of originating device.
+        device: Option<String>,
+        /// Timestamp.
+        time: Option<DateTime<FixedOffset>>,
+        /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
+        mode: Option<u8>
+    },
+    /// Something else! You'll get this variant if GPSD sent data that doesn't
+    /// exactly fit into any of the categories above.
+    ///
+    /// If you are getting this variant, we'd greatly appreciate it if you filed an issue,
+    /// so we can see what sort of strange data your GPSD is sending!
+    Dustbin {
         device: Option<String>,
         time: Option<DateTime<FixedOffset>>,
         mode: Option<u8>,

@@ -1,10 +1,16 @@
 //! A small crate to interface with gpsd, based on the server JSON protocol.
+//!
+//! This crate uses the [log](https://crates.io/crates/log) crate for debug logging.
+//! Logs will only appear if the logging apparatus is correctly configured. As such,
+//! if you're filing an issue, we would appreciate it if you did this and gave us the
+//! relevant logs!
 
 extern crate serde;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate serde_json;
 extern crate chrono;
 #[macro_use] extern crate error_chain;
+#[macro_use] extern crate log;
 
 use std::net::{ToSocketAddrs, TcpStream};
 use std::io::{BufRead, BufReader, Write};
@@ -91,10 +97,16 @@ impl GpsdConnection {
         loop {
             let mut buf = String::new();
             self.inner.read_line(&mut buf)?;
-            if buf == "" { continue; }
+            if buf == "" {
+                debug!("empty line received from GPSD");
+                continue;
+            }
+            debug!("raw GPSD data: {}", buf);
             let data = serde_json::from_str(&buf);
+            debug!("serde output: {:?}", data);
             match data {
                 Err(e) => {
+                    debug!("deserializing response failed: {:?}", e);
                     bail!(errors::ErrorKind::DeserFailed(buf, e));
                 },
                 Ok(x) => return Ok(x)
