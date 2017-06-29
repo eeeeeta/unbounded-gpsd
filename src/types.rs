@@ -24,7 +24,7 @@ fn serde_false() -> bool { false }
 /// their respective fields: for example, `alt_err` is the altitude error, given
 /// in meters. All errors are delivered with 95% confidence.
 pub enum TpvResponse {
-    /// 3D GPS fix, with track, speed and climb data.
+    /// 3D GPS fix, with speed and climb data.
     Fix3D {
         /// Name of originating device.
         device: Option<String>,
@@ -48,7 +48,7 @@ pub enum TpvResponse {
         #[serde(rename = "epv")]
         alt_err: Option<f64>,
         /// Course over ground, degrees from true north.
-        track: f64,
+        track: Option<f64>,
         #[serde(rename = "epd")]
         track_err: Option<f64>,
         /// Speed over ground, meters per second.
@@ -60,7 +60,7 @@ pub enum TpvResponse {
         #[serde(rename = "epc")]
         climb_err: Option<f64>
     },
-    /// 2D GPS fix, with track and speed data.
+    /// 2D GPS fix, with speed data.
     Fix2D {
         /// Name of originating device.
         device: Option<String>,
@@ -80,7 +80,7 @@ pub enum TpvResponse {
         #[serde(rename = "epx")]
         lon_err: Option<f64>,
         /// Course over ground, degrees from true north.
-        track: f64,
+        track: Option<f64>,
         #[serde(rename = "epd")]
         track_err: Option<f64>,
         /// Speed over ground, meters per second.
