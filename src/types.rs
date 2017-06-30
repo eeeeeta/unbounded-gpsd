@@ -1,4 +1,7 @@
 //! Types employed in the GPSD API.
+//!
+//! For further information (or where documentation may be sparse), refer to the
+//! GPSD API documentation [here](http://www.catb.org/gpsd/gpsd_json.html).
 use chrono::*;
 
 fn serde_true() -> bool { true }
@@ -17,12 +20,6 @@ fn serde_false() -> bool { false }
 ///
 /// The field documentation is exactly the same across variants; it may be omitted
 /// for brevity.
-///
-/// # Error estimates
-///
-/// Fields ending `_err` denote error estimates. These are given in the units of
-/// their respective fields: for example, `alt_err` is the altitude error, given
-/// in meters. All errors are delivered with 95% confidence.
 pub enum TpvResponse {
     /// 3D GPS fix, with speed and climb data.
     Fix3D {
@@ -37,26 +34,35 @@ pub enum TpvResponse {
         time_err: f64,
         /// Latitude in degrees: +/- signifies North/South. Present when mode is 2 or 3.
         lat: f64,
+        /// Latitude error estimate in meters, 95% confidence. Present if mode
+        /// is 2 or 3 and DOPs can be calculated from the satellite view.
         #[serde(rename = "epy")]
         lat_err: Option<f64>,
         /// Longitude in degrees: +/- signifies East/West. Present when mode is 2 or 3.
         lon: f64,
+        /// Longitude error estimate in meters, 95% confidence. Present if mode
+        /// is 2 or 3 and DOPs can be calculated from the satellite view.
         #[serde(rename = "epx")]
         lon_err: Option<f64>,
         /// Altitude in meters. Present if mode is 3.
         alt: f64,
+        /// Estimated vertical error in meters, 95% confidence. Present if mode
+        /// is 3 and DOPs can be calculated from the satellite view.
         #[serde(rename = "epv")]
         alt_err: Option<f64>,
         /// Course over ground, degrees from true north.
         track: Option<f64>,
+        /// Direction error estimate in degrees, 95% confidence.
         #[serde(rename = "epd")]
         track_err: Option<f64>,
         /// Speed over ground, meters per second.
         speed: f64,
+        /// Speed error estinmate in meters/sec, 95% confidence.
         #[serde(rename = "eps")]
         speed_err: Option<f64>,
         /// Climb (positive) or sink (negative) rate, meters per second.
         climb: f64,
+        /// Climb/sink error estimate in meters/sec, 95% confidence.
         #[serde(rename = "epc")]
         climb_err: Option<f64>
     },
@@ -177,6 +183,11 @@ pub enum TpvResponse {
         #[serde(rename = "epc")]
         climb_err: Option<f64>,
     },
+}
+impl Default for TpvResponse {
+    fn default() -> TpvResponse {
+        TpvResponse::Nothing { device: None, time: None, mode: None }
+    }
 }
 /// A single satellite.
 #[derive(Serialize, Deserialize, Debug)]
