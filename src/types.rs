@@ -29,7 +29,7 @@ pub enum TpvResponse {
         /// Name of originating device.
         device: Option<String>,
         /// Timestamp.
-        time: DateTime<FixedOffset>,
+        time: DateTime<Utc>,
         /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
         mode: u8,
         /// Estimated timestamp error (seconds, 95% confidence).
@@ -65,7 +65,7 @@ pub enum TpvResponse {
         /// Name of originating device.
         device: Option<String>,
         /// Timestamp.
-        time: DateTime<FixedOffset>,
+        time: DateTime<Utc>,
         /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
         mode: u8,
         /// Estimated timestamp error (seconds, 95% confidence).
@@ -98,7 +98,7 @@ pub enum TpvResponse {
         /// Name of originating device.
         device: Option<String>,
         /// Timestamp.
-        time: DateTime<FixedOffset>,
+        time: DateTime<Utc>,
         /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
         mode: u8,
         /// Estimated timestamp error (seconds, 95% confidence).
@@ -134,7 +134,7 @@ pub enum TpvResponse {
         /// Name of originating device.
         device: Option<String>,
         /// Timestamp.
-        time: DateTime<FixedOffset>,
+        time: DateTime<Utc>,
         /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
         mode: u8
     },
@@ -143,7 +143,7 @@ pub enum TpvResponse {
         /// Name of originating device.
         device: Option<String>,
         /// Timestamp.
-        time: Option<DateTime<FixedOffset>>,
+        time: Option<DateTime<Utc>>,
         /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
         mode: Option<u8>
     },
@@ -154,7 +154,7 @@ pub enum TpvResponse {
     /// so we can see what sort of strange data your GPSD is sending!
     Dustbin {
         device: Option<String>,
-        time: Option<DateTime<FixedOffset>>,
+        time: Option<DateTime<Utc>>,
         mode: Option<u8>,
         #[serde(rename = "ept")]
         time_err: Option<f64>,
@@ -223,7 +223,7 @@ pub struct SkyResponse {
     /// Name of originating device.
     pub device: Option<String>,
     /// Timestamp.
-    pub time: Option<DateTime<FixedOffset>>,
+    pub time: Option<DateTime<Utc>>,
     /// Longitudinal d.o.p.
     pub xdop: Option<f32>,
     /// Latitutinal d.o.p.
@@ -260,7 +260,7 @@ pub enum DeviceObject {
         path: Option<String>,
         /// Time the device was activated as an ISO8601 timestamp. If the device
         /// is inactive this attribute is absent.
-        activated: DateTime<FixedOffset>,
+        activated: DateTime<Utc>,
         /// Bit vector of property flags. Currently defined flags are: describe
         /// packet types seen so far (GPS, RTCM2, RTCM3, AIS). Won't be reported
         /// if empty, e.g. before gpsd has seen identifiable packets from the
@@ -299,7 +299,7 @@ pub enum DeviceObject {
     },
     Active {
         path: Option<String>,
-        activated: DateTime<FixedOffset>,
+        activated: DateTime<Utc>,
         subtype: Option<String>,
         bps: Option<u32>,
         parity: Option<String>,
@@ -383,7 +383,7 @@ pub enum Response {
     #[serde(rename = "POLL")]
     /// Data from the last-seen fixes on all active GPS devices.
     Poll {
-        time: DateTime<FixedOffset>,
+        time: DateTime<Utc>,
         /// Count of active devices.
         active: u32,
         tpv: Vec<TpvResponse>,

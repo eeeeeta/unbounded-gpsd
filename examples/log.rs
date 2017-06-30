@@ -1,6 +1,6 @@
-extern crate gpsd;
+extern crate unbounded_gpsd;
 
-use gpsd::*;
+use unbounded_gpsd::*;
 
 fn main() {
     let mut conn = GpsdConnection::new("127.0.0.1:2947").unwrap();
