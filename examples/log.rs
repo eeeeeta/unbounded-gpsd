@@ -7,8 +7,13 @@ fn main() {
     conn.watch(true).unwrap();
     loop {
         let resp = conn.get_response();
-        if let Err(resp) = resp {
-            println!("{:?}", resp);
+        match resp {
+            Ok(response) => {
+                println!("{:?}", response);
+            },
+            Err(e) => {
+                println!("{:?}", e);
+            }
         }
     }
 }
