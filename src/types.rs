@@ -8,7 +8,7 @@ fn serde_true() -> bool { true }
 fn serde_false() -> bool { false }
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(untagged, deny_unknown_fields)]
+#[serde(untagged)]
 /// A time-position-velocity (TPV) report.
 ///
 /// The API here splits the TPV object that GPSD sends into various variants, in
