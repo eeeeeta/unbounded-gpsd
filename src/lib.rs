@@ -42,6 +42,7 @@ use types::*;
 
 /// A connection to gpsd.
 pub struct GpsdConnection {
+    raw_data: bool,
     inner: BufReader<TcpStream>
 }
 impl GpsdConnection {
@@ -49,16 +50,22 @@ impl GpsdConnection {
     pub fn new<A: ToSocketAddrs>(addr: A) -> GpsdResult<Self> {
         let stream = TcpStream::connect(addr)?;
         let inner = BufReader::new(stream);
-        Ok(Self { inner })
+        Ok(Self { inner, raw_data: false })
     }
     /// Enable or disable watcher mode.
-    pub fn watch(&mut self, watch: bool) -> GpsdResult<()> {
+    pub fn watch(&mut self, watch: bool, json: bool, raw: u8) -> GpsdResult<()> {
         let stream = self.inner.get_mut();
         let watch_data = json!({
             "class": "WATCH",
             "enable": watch,
-            "json": true
+            "json": json,
+            "raw": raw,
         });
+        self.raw_data = if raw > 0 {
+            true
+        } else {
+            false
+        };
         let msg = format!("?WATCH={}\n", watch_data.to_string());
         stream.write_all(msg.as_bytes())?;
         Ok(())
@@ -106,8 +113,12 @@ impl GpsdConnection {
             debug!("serde output: {:?}", data);
             match data {
                 Err(e) => {
-                    debug!("deserializing response failed: {:?}", e);
-                    bail!(errors::ErrorKind::DeserFailed(buf, e));
+                    if self.raw_data {
+                        return Ok(Response::Raw(buf))
+                    } else {
+                        debug!("deserializing response failed: {:?}", e);
+                        bail!(errors::ErrorKind::DeserFailed(buf, e));
+                    }
                 },
                 Ok(x) => return Ok(x)
             }
