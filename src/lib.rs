@@ -68,7 +68,7 @@ impl GpsdConnection {
     }
     /// Enable or disable watcher mode.
     pub fn watch(&mut self, watch: bool) -> GpsdResult<()> {
-        self._watch(watch, false, 0)
+        self._watch(watch, true, 0)
     }
     /// Enable RAW mode. In RAW mode, gpsd sends raw data from the GPS device, depending on the value of `raw`:
     ///
