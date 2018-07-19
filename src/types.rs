@@ -420,5 +420,6 @@ pub enum Response {
     #[serde(rename = "ERROR")]
     Error {
         message: String
-    }
+    },
+    Raw(String)
 }

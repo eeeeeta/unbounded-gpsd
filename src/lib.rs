@@ -42,6 +42,7 @@ use types::*;
 
 /// A connection to gpsd.
 pub struct GpsdConnection {
+    raw_data: bool,
     inner: BufReader<TcpStream>
 }
 impl GpsdConnection {
@@ -49,19 +50,34 @@ impl GpsdConnection {
     pub fn new<A: ToSocketAddrs>(addr: A) -> GpsdResult<Self> {
         let stream = TcpStream::connect(addr)?;
         let inner = BufReader::new(stream);
-        Ok(Self { inner })
+        Ok(Self { inner, raw_data: false })
     }
     /// Enable or disable watcher mode.
-    pub fn watch(&mut self, watch: bool) -> GpsdResult<()> {
+    fn _watch(&mut self, watch: bool, json: bool, raw: u8) -> GpsdResult<()> {
         let stream = self.inner.get_mut();
         let watch_data = json!({
             "class": "WATCH",
             "enable": watch,
-            "json": true
+            "json": json,
+            "raw": raw,
         });
+        self.raw_data = raw > 0;
         let msg = format!("?WATCH={}\n", watch_data.to_string());
         stream.write_all(msg.as_bytes())?;
         Ok(())
+    }
+    /// Enable or disable watcher mode.
+    pub fn watch(&mut self, watch: bool) -> GpsdResult<()> {
+        self._watch(watch, true, 0)
+    }
+    /// Enable RAW mode. In RAW mode, gpsd sends raw data from the GPS device, depending on the value of `raw`:
+    ///
+    /// When this attribute is set to 1 for a channel, gpsd reports the unprocessed NMEA or
+    /// AIVDM data stream from whatever device is attached. Binary GPS packets are hex-dumped.
+    /// RTCM2 and RTCM3 packets are not dumped in raw mode. When this attribute is set to 2 for a channel that
+    /// processes binary data, gpsd reports the received data verbatim without hex-dumping.
+    pub fn watch_raw(&mut self, watch: bool, json: bool, raw: u8) -> GpsdResult<()> {
+        self._watch(watch, json, raw)
     }
     /// The POLL command requests data from the last-seen fixes on all active
     /// GPS devices. Devices must previously have been activated by ?WATCH to be
@@ -106,8 +122,12 @@ impl GpsdConnection {
             debug!("serde output: {:?}", data);
             match data {
                 Err(e) => {
-                    debug!("deserializing response failed: {:?}", e);
-                    bail!(errors::ErrorKind::DeserFailed(buf, e));
+                    if self.raw_data {
+                        return Ok(Response::Raw(buf))
+                    } else {
+                        debug!("deserializing response failed: {:?}", e);
+                        bail!(errors::ErrorKind::DeserFailed(buf, e));
+                    }
                 },
                 Ok(x) => return Ok(x)
             }
