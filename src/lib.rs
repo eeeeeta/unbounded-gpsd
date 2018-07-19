@@ -53,7 +53,7 @@ impl GpsdConnection {
         Ok(Self { inner, raw_data: false })
     }
     /// Enable or disable watcher mode.
-    pub fn watch(&mut self, watch: bool, json: bool, raw: u8) -> GpsdResult<()> {
+    fn _watch(&mut self, watch: bool, json: bool, raw: u8) -> GpsdResult<()> {
         let stream = self.inner.get_mut();
         let watch_data = json!({
             "class": "WATCH",
@@ -61,14 +61,23 @@ impl GpsdConnection {
             "json": json,
             "raw": raw,
         });
-        self.raw_data = if raw > 0 {
-            true
-        } else {
-            false
-        };
+        self.raw_data = raw > 0;
         let msg = format!("?WATCH={}\n", watch_data.to_string());
         stream.write_all(msg.as_bytes())?;
         Ok(())
+    }
+    /// Enable or disable watcher mode.
+    pub fn watch(&mut self, watch: bool) -> GpsdResult<()> {
+        self._watch(watch, false, 0)
+    }
+    /// Enable RAW mode. In RAW mode, gpsd sends raw data from the GPS device, depending on the value of `raw`:
+    ///
+    /// When this attribute is set to 1 for a channel, gpsd reports the unprocessed NMEA or
+    /// AIVDM data stream from whatever device is attached. Binary GPS packets are hex-dumped.
+    /// RTCM2 and RTCM3 packets are not dumped in raw mode. When this attribute is set to 2 for a channel that
+    /// processes binary data, gpsd reports the received data verbatim without hex-dumping.
+    pub fn watch_raw(&mut self, watch: bool, json: bool, raw: u8) -> GpsdResult<()> {
+        self._watch(watch, json, raw)
     }
     /// The POLL command requests data from the last-seen fixes on all active
     /// GPS devices. Devices must previously have been activated by ?WATCH to be
