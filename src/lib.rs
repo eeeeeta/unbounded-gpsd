@@ -31,6 +31,9 @@ pub mod errors {
             DeserFailed(s: String, e: ::serde_json::Error) {
                 display("failed to deserialize text '{}': {}", s, e)
             }
+            GpsdFailed(s: String) {
+                display("gpsd connection closed")
+            }
         }
     }
 }
@@ -112,7 +115,14 @@ impl GpsdConnection {
     pub fn get_response(&mut self) -> GpsdResult<Response> {
         loop {
             let mut buf = String::new();
-            self.inner.read_line(&mut buf)?;
+            let read_result = self.inner.read_line(&mut buf);
+
+            if let Ok(size) = read_result {
+                if size == 0 {
+                    bail!(errors::ErrorKind::GpsdFailed(String::from("Gpsd Connection Closed")));
+                }
+            }
+
             if buf == "" {
                 debug!("empty line received from GPSD");
                 continue;
