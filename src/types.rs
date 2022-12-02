@@ -198,13 +198,13 @@ pub struct SatelliteObject {
     pub prn: u16,
     #[serde(rename = "az")]
     /// Azimuth, degrees from true north.
-    pub azimuth: u32,
+    pub azimuth: f32,
     #[serde(rename = "el")]
     /// Elevation in degrees.
-    pub elevation: u32,
+    pub elevation: f32,
     #[serde(rename = "ss")]
     /// Signal strength in dB.
-    pub signal_strength: u32,
+    pub signal_strength: f32,
     /// Used in current solution? (SBAS/WAAS/EGNOS satellites may be flagged
     /// used if the solution has corrections from them, but not all drivers make
     /// this information available.)
