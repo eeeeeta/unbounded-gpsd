@@ -115,12 +115,8 @@ impl GpsdConnection {
     pub fn get_response(&mut self) -> GpsdResult<Response> {
         loop {
             let mut buf = String::new();
-            let read_result = self.inner.read_line(&mut buf);
-
-            if let Ok(size) = read_result {
-                if size == 0 {
-                    bail!(errors::ErrorKind::GpsdFailed(String::from("Gpsd Connection Closed")));
-                }
+            if self.inner.read_line(&mut buf)? == 0 {
+                bail!(errors::ErrorKind::GpsdFailed(String::from("Gpsd Connection Closed")));
             }
 
             if buf == "" {
