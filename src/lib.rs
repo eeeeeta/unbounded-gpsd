@@ -5,55 +5,35 @@
 //! if you're filing an issue, we would appreciate it if you did this and gave us the
 //! relevant logs!
 
-extern crate serde;
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate serde_json;
-extern crate chrono;
-#[macro_use] extern crate error_chain;
-#[macro_use] extern crate log;
-
-use std::net::{ToSocketAddrs, TcpStream};
 use std::io::{BufRead, BufReader, Write};
+use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
-pub mod errors {
-    //! Error handling, using error-chain.
+use log::debug;
+use serde_json::json;
 
-    error_chain! {
-        types {
-            Error, ErrorKind, ResultExt, GpsdResult;
-        }
-        foreign_links {
-            Io(::std::io::Error);
-            Serde(::serde_json::Error);
-        }
-        errors {
-            DeserFailed(s: String, e: ::serde_json::Error) {
-                display("failed to deserialize text '{}': {}", s, e)
-            }
-            GpsdFailed(s: String) {
-                display("gpsd connection closed")
-            }
-        }
-    }
-}
-pub use errors::GpsdResult;
-pub mod types;
+mod result;
+pub use result::{GpsdError, GpsdResult};
+
 #[cfg(test)]
 pub mod tests;
+pub mod types;
 use types::*;
 
 /// A connection to gpsd.
 pub struct GpsdConnection {
     raw_data: bool,
-    inner: BufReader<TcpStream>
+    inner: BufReader<TcpStream>,
 }
 impl GpsdConnection {
     /// Make a new connection to a given address.
     pub fn new<A: ToSocketAddrs>(addr: A) -> GpsdResult<Self> {
         let stream = TcpStream::connect(addr)?;
         let inner = BufReader::new(stream);
-        Ok(Self { inner, raw_data: false })
+        Ok(Self {
+            inner,
+            raw_data: false,
+        })
     }
     /// Enable or disable watcher mode.
     fn _watch(&mut self, watch: bool, json: bool, raw: u8) -> GpsdResult<()> {
@@ -65,7 +45,7 @@ impl GpsdConnection {
             "raw": raw,
         });
         self.raw_data = raw > 0;
-        let msg = format!("?WATCH={}\n", watch_data.to_string());
+        let msg = format!("?WATCH={}\n", watch_data);
         stream.write_all(msg.as_bytes())?;
         Ok(())
     }
@@ -116,10 +96,10 @@ impl GpsdConnection {
         loop {
             let mut buf = String::new();
             if self.inner.read_line(&mut buf)? == 0 {
-                bail!(errors::ErrorKind::GpsdFailed(String::from("Gpsd Connection Closed")));
+                return Err(GpsdError::GpsdFailed);
             }
 
-            if buf == "" {
+            if buf.is_empty() {
                 debug!("empty line received from GPSD");
                 continue;
             }
@@ -129,13 +109,13 @@ impl GpsdConnection {
             match data {
                 Err(e) => {
                     if self.raw_data {
-                        return Ok(Response::Raw(buf))
+                        return Ok(Response::Raw(buf));
                     } else {
                         debug!("deserializing response failed: {:?}", e);
-                        bail!(errors::ErrorKind::DeserFailed(buf, e));
+                        return Err(GpsdError::DeserFailed(buf, e));
                     }
-                },
-                Ok(x) => return Ok(x)
+                }
+                Ok(x) => return Ok(x),
             }
         }
     }

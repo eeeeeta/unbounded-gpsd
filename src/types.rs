@@ -2,10 +2,15 @@
 //!
 //! For further information (or where documentation may be sparse), refer to the
 //! GPSD API documentation [here](http://www.catb.org/gpsd/gpsd_json.html).
+use ::serde::{Deserialize, Serialize};
 use chrono::*;
 
-fn serde_true() -> bool { true }
-fn serde_false() -> bool { false }
+fn serde_true() -> bool {
+    true
+}
+fn serde_false() -> bool {
+    false
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
@@ -64,7 +69,7 @@ pub enum TpvResponse {
         climb: f64,
         /// Climb/sink error estimate in meters/sec, 95% confidence.
         #[serde(rename = "epc")]
-        climb_err: Option<f64>
+        climb_err: Option<f64>,
     },
     /// 2D GPS fix, with speed data.
     Fix2D {
@@ -142,7 +147,7 @@ pub enum TpvResponse {
         /// Timestamp.
         time: DateTime<Utc>,
         /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
-        mode: u8
+        mode: u8,
     },
     /// Possibly no useful data whatsoever.
     Nothing {
@@ -151,7 +156,7 @@ pub enum TpvResponse {
         /// Timestamp.
         time: Option<DateTime<Utc>>,
         /// Fix type: 0 = unknown, 1 = no fix, 2 = 2D fix, 3 = 3D fix.
-        mode: Option<u8>
+        mode: Option<u8>,
     },
     /// Something else! You'll get this variant if GPSD sent data that doesn't
     /// exactly fit into any of the categories above.
@@ -186,7 +191,11 @@ pub enum TpvResponse {
 }
 impl Default for TpvResponse {
     fn default() -> TpvResponse {
-        TpvResponse::Nothing { device: None, time: None, mode: None }
+        TpvResponse::Nothing {
+            device: None,
+            time: None,
+            mode: None,
+        }
     }
 }
 /// A single satellite.
@@ -208,7 +217,7 @@ pub struct SatelliteObject {
     /// Used in current solution? (SBAS/WAAS/EGNOS satellites may be flagged
     /// used if the solution has corrections from them, but not all drivers make
     /// this information available.)
-    pub used: bool
+    pub used: bool,
 }
 #[derive(Serialize, Deserialize, Debug)]
 /// A sky view report (SKY) of GPS satellite positions.
@@ -250,7 +259,7 @@ pub struct SkyResponse {
     /// Hyperspherical d.o.p.
     pub gdop: Option<f32>,
     /// Satellites in skyview.
-    pub satellites: Vec<SatelliteObject>
+    pub satellites: Vec<SatelliteObject>,
 }
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
@@ -306,7 +315,7 @@ pub enum DeviceObject {
         /// Device minimum cycle time in seconds. Reported from ?DEVICE when
         /// (and only when) the rate is switchable. It is read-only and not
         /// settable.
-        minicycle: Option<f32>
+        minicycle: Option<f32>,
     },
     Active {
         path: Option<String>,
@@ -317,11 +326,11 @@ pub enum DeviceObject {
         stopbits: Option<String>,
         native: Option<u8>,
         cycle: Option<f32>,
-        minicycle: Option<f32>
+        minicycle: Option<f32>,
     },
     Inactive {
-        path: Option<String>
-    }
+        path: Option<String>,
+    },
 }
 #[derive(Serialize, Deserialize, Debug)]
 /// Information about watcher mode parameters.
@@ -363,7 +372,7 @@ pub struct WatchObject {
     pub device: Option<String>,
     /// URL of the remote daemon reporting the watch set. If empty, this is a
     /// WATCH response from the local daemon.
-    pub remote: Option<String>
+    pub remote: Option<String>,
 }
 impl Default for WatchObject {
     fn default() -> Self {
@@ -376,7 +385,7 @@ impl Default for WatchObject {
             split24: false,
             pps: false,
             device: None,
-            remote: None
+            remote: None,
         }
     }
 }
@@ -398,14 +407,14 @@ pub enum Response {
         /// Count of active devices.
         active: u32,
         tpv: Vec<TpvResponse>,
-        sky: Vec<SkyResponse>
+        sky: Vec<SkyResponse>,
     },
     #[serde(rename = "DEVICE")]
     Device(DeviceObject),
     #[serde(rename = "DEVICES")]
     Devices {
         devices: Vec<DeviceObject>,
-        remote: Option<String>
+        remote: Option<String>,
     },
     #[serde(rename = "WATCH")]
     Watch(WatchObject),
@@ -415,11 +424,11 @@ pub enum Response {
         rev: String,
         proto_major: u32,
         proto_minor: u32,
-        remote: Option<String>
+        remote: Option<String>,
     },
     #[serde(rename = "ERROR")]
     Error {
-        message: String
+        message: String,
     },
-    Raw(String)
+    Raw(String),
 }

@@ -1,5 +1,3 @@
-extern crate unbounded_gpsd;
-
 use unbounded_gpsd::*;
 
 fn main() {
@@ -10,7 +8,7 @@ fn main() {
         match resp {
             Ok(response) => {
                 println!("{:?}", response);
-            },
+            }
             Err(e) => {
                 println!("{:?}", e);
             }
